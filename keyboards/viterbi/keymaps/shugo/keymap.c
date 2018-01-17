@@ -45,15 +45,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
   [_QWERTY] = KC_KEYMAP(
   //,----+----+----+----+----+----+----.    ,----+----+----+----+----+----+----.
-     ESC, GRV , 1  , 2  , 3  , 4  , 5  ,      6  , 7  , 8  , 9  , 0  ,MINS,EQL ,
+     ESC ,GRV , 1  , 2  , 3  , 4  , 5  ,      6  , 7  , 8  , 9  , 0  ,MINS,EQL ,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-     INS, TAB , Q  , W  , E  , R  , T  ,      Y  , U  , I  , O  , P  ,LBRC,RBRC,
+     INS ,TAB , Q  , W  , E  , R  , T  ,      Y  , U  , I  , O  , P  ,LBRC,RBRC,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-     DEL, LCTL, A  , S  , D  , F  , G  ,      H  , J  , K  , L  ,SCLN,QUOT,ENT ,
+     DEL ,LCTL, A  , S  , D  , F  , G  ,      H  , J  , K  , L  ,SCLN,QUOT,ENT ,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
      PGUP,LSFT, Z  , X  , C  , V  , B  ,      N  , M  ,COMM,DOT ,SLSH,BSLS,RSFT,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-     PGDN,AJST,LCTL,LALT,LGUI,LOWR,SPC ,     BSPC,RASE,LEFT,DOWN, UP ,RGHT,RCTL
+     PGDN,HOME,END ,LALT,LGUI,LOWR,SPC ,     BSPC,RASE,LEFT,DOWN, UP ,RGHT,RCTL
   //`----+----+----+----+----+----+----'    `----+----+----+----+----+----+----'
   ),
 
