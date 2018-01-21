@@ -18,7 +18,10 @@ enum custom_keycodes {
   LOWER,
   RAISE,
   ADJUST,
+  DYNAMIC_MACRO_RANGE,
 };
+
+#include "dynamic_macro.h"
 
 // Fillers to make layering more clear
 #define KC_ KC_TRNS
@@ -27,6 +30,11 @@ enum custom_keycodes {
 #define KC_AJST ADJUST
 #define KC_LOWR LOWER
 #define KC_RASE RAISE
+#define KC_DRS1 DYN_REC_START1
+#define KC_DRS2 DYN_REC_START2
+#define KC_DMP1 DYN_MACRO_PLAY1
+#define KC_DMP2 DYN_MACRO_PLAY2
+#define KC_DRS  DYN_REC_STOP
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -99,15 +107,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  */
   [_RAISE] = KC_KEYMAP(
   //,----+----+----+----+----+----+----.    ,----+----+----+----+----+----+----.
-         ,TILD, F1 , F2 , F3 , F4 , F5 ,      F6 , F7 , F8 , F9 ,F10 ,F11 ,F12 ,
+     DRS ,TILD, F1 , F2 , F3 , F4 , F5 ,      F6 , F7 , F8 , F9 ,F10 ,F11 ,F12 ,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-     UNDS,    , 1  , 2  , 3  , 4  , 5  ,      6  , 7  , 8  , 9  , 0  ,LCBR,RCBR,
+     DRS1,    , 1  , 2  , 3  , 4  , 5  ,      6  , 7  , 8  , 9  , 0  ,LCBR,RCBR,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-     PLUS,    , F1 , F2 , F3 , F4 , F5 ,      F6 ,MINS,PLUS,LBRC,RBRC,    ,    ,
+     DMP1,    , F1 , F2 , F3 , F4 , F5 ,      F6 ,MINS,PLUS,LBRC,RBRC,    ,    ,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-         ,    , F7 , F8 , F9 ,F10 ,F11 ,     F12 ,NUHS,NUBS,    ,    ,    ,    ,
+     DRS2,    , F7 , F8 , F9 ,F10 ,F11 ,     F12 ,NUHS,NUBS,    ,    ,    ,    ,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-         ,    ,    ,    ,    ,    ,    ,         ,    ,MNXT,VOLD,VOLU,MPLY,MUTE
+     DMP2,    ,    ,    ,    ,    ,    ,         ,    ,MNXT,VOLD,VOLU,MPLY,MUTE
   //`----+----+----+----+----+----+----'    `----+----+----+----+----+----+----'
   ),
 
@@ -131,6 +139,9 @@ void persistent_default_layer_set(uint16_t default_layer) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (!process_record_dynamic_macro(keycode, record)) {
+    return false;
+  }
   switch (keycode) {
     case QWERTY:
       if (record->event.pressed) {
