@@ -18,6 +18,7 @@ enum custom_keycodes {
   LOWER,
   RAISE,
   ADJUST,
+  TCODE_TOGGLE,
   DYNAMIC_MACRO_RANGE,
 };
 
@@ -30,11 +31,13 @@ enum custom_keycodes {
 #define KC_AJST ADJUST
 #define KC_LOWR LOWER
 #define KC_RASE RAISE
+#define KC_TCTG TCODE_TOGGLE
 #define KC_DRS1 DYN_REC_START1
 #define KC_DRS2 DYN_REC_START2
 #define KC_DMP1 DYN_MACRO_PLAY1
 #define KC_DMP2 DYN_MACRO_PLAY2
 #define KC_DRS  DYN_REC_STOP
+#define KC_DBG  DEBUG
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -115,7 +118,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
      DRS2,    , F7 , F8 , F9 ,F10 ,F11 ,     F12 ,NUHS,NUBS,    ,    ,    ,    ,
   //|----+----+----+----+----+----+----|    |----+----+----+----+----+----+----|
-     DMP2,    ,    ,    ,    ,    ,    ,         ,    ,MNXT,VOLD,VOLU,MPLY,MUTE
+     DMP2,    ,    ,    ,    ,DBG ,TCTG,         ,    ,MNXT,VOLD,VOLU,MPLY,MUTE
   //`----+----+----+----+----+----+----'    `----+----+----+----+----+----+----'
   ),
 
@@ -133,16 +136,103 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 float tone_qwerty[][2]     = SONG(QWERTY_SOUND);
 #endif
 
+#include "tc_tbl.h"
+
+static bool tcode_enabled;
+static int tcode_prev_key_index;
+
+/*
+ * Viterbi Keyboard Matrix
+ *
+ * Left keyboard:
+ * Cols: 0 1 2 3 4 5 6 (Left to Right)
+ * Rows: 0 1 2 3 4 (Top to Bottom)
+ *
+ * Right keyboard:
+ * Cols: 6 5 4 3 2 1 0 (Left to Right)
+ * Rows: 5 6 7 8 9 (Top to Bottom)
+ */
+
+static inline bool is_tcode_key(keyrecord_t *record) {
+  keypos_t kp = record->event.key;
+  return (0 <= kp.row && kp.row <= 3 && 2 <= kp.col && kp.col <= 6) ||
+	  (5 <= kp.row && kp.row <= 8 && 2 <= kp.col && kp.col <= 6);
+}
+
+static inline int tcode_key_index(keyrecord_t *record) {
+  keypos_t kp = record->event.key;
+  if (kp.row <= 3) {
+    return kp.row * 10 + kp.col - 2;
+  }
+  else {
+    return (kp.row - 5) * 10 + (6 - kp.col) + 5;
+  }
+}
+
+static inline bool process_tcode(uint16_t keycode, keyrecord_t *record) {
+  if (!tcode_enabled) {
+    return true;
+  }
+  if (!is_tcode_key(record) || get_mods() != 0) {
+    tcode_prev_key_index = -1;
+    return true;
+  }
+  if (!record->event.pressed) {
+    return false;
+  }
+  int i = tcode_key_index(record);
+  dprintf("T-Code: row = %d, col = %d, i = %d\n",
+	  record->event.key.row,
+	  record->event.key.col,
+	  i);
+  if (tcode_prev_key_index == -1) {
+    tcode_prev_key_index = i;
+  }
+  else {
+    int j = tcode_prev_key_index + i * 40;
+    dprintf("T-Code: tcode_prev_key_index = %d, i = %d, j = %d\n",
+	    tcode_prev_key_index, i, j);
+    if (0 <= j && j < 40 * 40) {
+      uint16_t ch = pgm_read_word(tcode_table + j);
+      process_unicode(ch | QK_UNICODE, record);
+    }
+    else {
+      process_unicode(0x3013 | QK_UNICODE, record);
+    }
+    tcode_prev_key_index = -1;
+  }
+  return false;
+}
+
+void matrix_init_user(void) {
+  tcode_enabled = false;
+  tcode_prev_key_index = -1;
+  debug_enable = true;
+  set_unicode_input_mode(UC_LNX);
+}
+
 void persistent_default_layer_set(uint16_t default_layer) {
   eeconfig_update_default_layer(default_layer);
   default_layer_set(default_layer);
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (!process_tcode(keycode, record)) {
+    return false;
+  }
   if (!process_record_dynamic_macro(keycode, record)) {
     return false;
   }
   switch (keycode) {
+    case TCODE_TOGGLE:
+      if (record->event.pressed) {
+        tcode_enabled = !tcode_enabled;
+        if (tcode_enabled) {
+	  tcode_prev_key_index = -1;
+        }
+      }
+      return false;
+      break;
     case QWERTY:
       if (record->event.pressed) {
         #ifdef AUDIO_ENABLE
